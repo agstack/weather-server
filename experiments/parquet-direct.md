@@ -53,7 +53,7 @@ select precip, t, latitude, longitude, box from dfs.home.`mrms/grib-07-05.parque
 )
 select box, precip, t, latitude, longitude 
 from t1 
-order by box, latitude, longitude
+order by box, latitude, longitude, t
 )
 ```
 This concatenation query took about 150 seconds to run and processed about 80M rows
