@@ -76,10 +76,12 @@ the execution as would be expected. This is the physical plan for this query:
 00-01      Project(precip=[$3], t=[$4], latitude=[$1], longitude=[$2]) : rowType = RecordType(ANY precip, ANY t, ANY latitude, ANY longitude): rowcount = 176.80949999999999, cumulative cost = {105129.619 rows, 509231.00549999997 cpu, 261940.0 io, 0.0 network, 0.0 memory}, id = 5332
 00-02        SelectionVectorRemover : rowType = RecordType(ANY box, ANY latitude, ANY longitude, ANY precip, ANY t): rowcount = 176.80949999999999, cumulative cost = {104952.8095 rows, 508523.76749999996 cpu, 261940.0 io, 0.0 network, 0.0 memory}, id = 5331
 00-03          Filter(condition=[AND(=($0, 3289.0), =($1, 32.015), =($2, -88.025))]) : rowType = RecordType(ANY box, ANY latitude, ANY longitude, ANY precip, ANY t): rowcount = 176.80949999999999, cumulative cost = {104776.0 rows, 508346.958 cpu, 261940.0 io, 0.0 network, 0.0 memory}, id = 5330
-00-04            Scan(table=[[dfs, home, mrms/grib-week.parquet]], groupscan=[ParquetGroupScan [entries=[ReadEntryWithPath [path=/mapr/c0/user/tdunning/mrms/grib-week.parquet/0_0_356.parquet]], 
-selectionRoot=maprfs:/mapr/c0/user/tdunning/mrms/grib-week.parquet, 
-numFiles=1, numRowGroups=1, 
-filter=booleanAnd(...) ) , columns=[...]]]) ... 
+00-04            Scan(table=[[dfs, home, mrms/grib-week.parquet]], 
+                     groupscan=[ParquetGroupScan [
+                        entries=[ReadEntryWithPath [path=/mapr/c0/user/tdunning/mrms/grib-week.parquet/0_0_356.parquet]], 
+                        selectionRoot=maprfs:/mapr/c0/user/tdunning/mrms/grib-week.parquet, 
+                        numFiles=1, numRowGroups=1, 
+                        filter=booleanAnd(...) ) , columns=[...]]]) ... 
 ```
 Examination of this physical plan shows that the query only looked at one partition file 
 and a single rowgroup. It was also able to push down the selection criterion into the Parquet scanner.
