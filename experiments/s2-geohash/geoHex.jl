@@ -2,9 +2,11 @@
 using Plots
 using GeoInterface
 using LibGEOS
+using H3
 using H3.Lib
-using .Lib: H3Index, GeoCoord, Geofence, GeoPolygon
+using H3.Lib: H3Index, GeoCoord, Geofence, GeoPolygon
 import H3.API.geoToH3
+using Geodesy
 
 # common functions we need include:
 
@@ -75,7 +77,7 @@ function h3ToPolygon(id::H3Index)
     return closedPolygon(px)
 end
 
-function closedPolygon(coordinates::Vector{Float64}) :: AbstractPolygon
+function closedPolygon(coordinates::Vector{Vector{Float64}}) :: AbstractPolygon
     push!(coordinates, coordinates[1])
     return LibGEOS.Polygon([coordinates])
 end
