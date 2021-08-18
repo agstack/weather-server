@@ -2,6 +2,7 @@
 # for each data point. The final result for the data is written to a 
 # feather file for consumption by Arrow (probably from Python)
 
+using H3
 using H3.API
 using CSV
 using DataFrames
@@ -18,12 +19,17 @@ end
 allDay = vcat(t...)
 
 
-# Add H3 tags to each data point
-tiles = Int64[]
+# Add H3 tags to each data point 
+tiles = Dict{Int, Vector{H3Index}}()
 for row in eachrow(allDay)
-    push!(tiles, geoToH3(GeoCoord(deg2rad(row[:latitude]), deg2rad(row[:longitude])), 3))
+    for resolution in 3:9
+        hex = geoToH3(GeoCoord(deg2rad(row[:latitude]), deg2rad(row[:longitude])), resolution)
+        push!(get!(tiles, resolution, []), hex)
+    end
 end
-allDay[!,:tile] = tiles
+for resolution in keys(tiles)
+    allDay[!,"tile_$resolution"] = tiles[resolution]
+end
 
 sort!(allDay, [:tile, :latitude, :longitude, :datetime])
 

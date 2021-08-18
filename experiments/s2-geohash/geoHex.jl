@@ -7,8 +7,81 @@ using H3.Lib
 using H3.Lib: H3Index, GeoCoord, Geofence, GeoPolygon
 import H3.API.geoToH3
 using Geodesy
+using Statistics
 
-# common functions we need include:
+import Plots.plot, Plots.plot!
+
+struct Hex 
+    center::Vector{Float64}
+    epsilon::Float64
+    shape::LibGEOS.Polygon
+end
+
+"""
+    Hex(center, size; angle=0, adj=(0, 0))
+
+    Creates a regular hexagon as a LibGEOS polygon. In the simplest case
+    center is at the center of the hexagon and size gives the length
+    of any side. You can rotate the hexagon with the optional keyword 
+    argument angle or you can adjust what point in the hexagon that the
+    center actually represents. Use adj=(-1,0) to specify the left side,
+    adj=(0,-1) to specify the center of the bottom side and so on.
+
+    # Examples
+    Honey comb
+    ```julia
+    julia> h1 = Hex((0,0), 1)
+    julia> h2 = Hex((0,sqrt(3)), 1)
+    julia> h3 = Hex((0,-sqrt(3)), 1)
+    julia> h4 = Hex((0.5,sqrt(3)/2), 1, adj=(-1,0))
+    julia> h5 = Hex((-0.5,sqrt(3)/2), 1, adj=(-1,0))
+    julia> h6 = Hex((0.5,-sqrt(3)/2), 1, adj=(-1,0))
+    julia> h7 = Hex((-0.5,-sqrt(3)/2), 1, adj=(-1,0))
+    ```
+"""
+function Hex(center, epsilon; angle=0, adj=[0,0])
+    base = [0 0;0.5 sqrt(3)/2; 1.5 sqrt(3)/2; 2 0; 1.5 -sqrt(3)/2; 0.5 -sqrt(3)/2; 0 0] .- [1 0]
+    center = center * epsilon 
+    rotation = [cos(angle) sin(angle); -sin(angle) cos(angle)]
+    v = (base .+ + ([2, sqrt(3)] .* adj)') * rotation .+ center'
+    z = [ [v[i,1],v[i,2]] for i in 1:size(v)[1] ]
+    return Hex(center, epsilon, LibGEOS.Polygon([z]))
+end
+
+function kring()
+    return reduce(LibGEOS.union, [
+        Hex([0,0], 1).shape,
+        Hex([0,0],1,adj=[0.75,0.5]).shape,
+        Hex([0,0],1,adj=[0.75,-0.5]).shape,
+        Hex([0,0],1,adj=[-0.75,-0.5]).shape,
+        Hex([0,0],1,adj=[-0.75,0.5]).shape,
+        Hex([0,0],1,adj=[-0,1]).shape,
+        Hex([0,0],1,adj=[-0,-1]).shape
+        ])
+end
+
+function hexSafe(center, radius, ring)
+    circle = buffer(LibGEOS.Point(center...), radius)
+    r = difference(circle, ring)
+    return area(r) / area(circle)
+end
+
+function hexSafe(radius)
+    core = Hex([0,1], 1).shape
+    ring = kring()
+    r = []
+    centers = (rand(10000, 2) .- [0.5 0.5]) .* [2 sqrt(3)] 
+    centers = centers[ [contains(core, LibGEOS.Point(centers[i,:])) for i in 1:10000], : ]
+    return mean([hexSafe(centers[i, :], radius, ring) for i in 1:size(centers)[2]])
+end
+
+function plot(h::Hex) 
+    plot(h.shape)
+end
+
+function plot!(h::Hex) 
+    plot!(h.shape)
+end
 
 """
     geoToH3(p, resolution)
