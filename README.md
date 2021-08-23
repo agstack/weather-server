@@ -11,7 +11,7 @@ still look like a pretty simple data frame of historical weather data.
 
 The data for this service comes from several sources with the intent of providing the best data we can. In
 some areas such as the US and parts of Europe data from weather stations, radars and other sensors are
-aggregated and models are used to re-process that source source to get a very detailed grid of estimated 
+aggregated and models are used to re-process that source to get a very detailed grid of estimated 
 values with very high quality even in the face of missing data or bad calibrations. In other areas, we
 may have to make do with lower resolution data such as raw weather station data, but the goal is always 
 to provide data that is as good as we can reasonably provide.
