@@ -1,4 +1,4 @@
-# Querying a full month using Parqut
+# Querying a full month using Parquet
 
 This experiment involved querying a full month of Parquet data using different arrangements of data.
 
