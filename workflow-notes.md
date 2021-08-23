@@ -33,15 +33,24 @@ Systems in the data-centric category include DVC and Pachyderm.
 # System comparisons
 ## Airflow
 https://airflow.apache.org/
+https://twitter.com/holdenkarau/status/1429206463294021634?s=20
+
 ## Luigi
 https://luigi.readthedocs.io/en/stable/
+https://twitter.com/lalleal/status/1429196078193250312?s=20
 ## Dagster
 https://dagster.io/
+https://twitter.com/schrockn/status/1429209827494875139?s=20
 ## Flyte
 https://docs.flyte.org/en/latest/
+https://twitter.com/soebrunk/status/1429539368558006273?s=20
 ## DVC
 https://dvc.org/
 ## Pachyderm
 https://www.pachyderm.com/
+https://twitter.com/tristanzajonc/status/1429208490094960641?s=20
 ## Metaflow
 https://metaflow.org/
+## Gitlab's CI
+## Project Nessie
+https://twitter.com/patrickangeles/status/1429254409796657153?s=20
