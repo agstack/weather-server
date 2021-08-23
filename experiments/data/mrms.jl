@@ -1,17 +1,18 @@
 using Pkg; Pkg.activate("."); Pkg.instantiate()  # needed since CfGRIB hasn't yet been added to Julia package registry
+
 using CfGRIB
 using AxisArrays
 using Printf
 using Dates
-using HTTP
 using GZip
 
 """
-readMRMS(fname)
+    readMRMS(fname)
 
-Extracts MRMS data in grib format from a specified file and then extracts specific
-data elements into CSV formatted files in a directory call csv (one file per location 
-with non-zero precipitation)
+Extracts MRMS data in GRIB-2 format from fname.
+Saves data with detectable precipiation to folder ./csv,
+based on truncated lat-lons.
+Example: ./csv/48_70.csv
 """
 function readMRMS(fname)
     fh = GZip.open(fname, "r")
@@ -19,17 +20,22 @@ function readMRMS(fname)
     io = open("data.grib2", "w")
     write(io, data)
     close(io)
+
     dataset = CfGRIB.DataSet("data.grib2")
     
     # Get datetime from dataset, but we could also parse the fname instead
     datetime = replace(string(unix2datetime(dataset.variables["time"].data)), "T" => " ")
+
     lats = dataset.variables["latitude"].data
     lons = dataset.variables["longitude"].data
     data = dataset.variables["paramId0"].data[:, :]
+
     files = Dict()
+
     # MRMS is 3500 x 7000
     for i = 1:3500, j = 1:7000
         lon = lons[j] - 360
+
         # Conterminous US data only
         if 25 <= lats[i] <= 50 && -125 <= lon <= -67
             # Exclude non-detectable precipitation to save space
@@ -43,18 +49,21 @@ function readMRMS(fname)
             end
         end
     end
-    for file in keys(files)
-        close(files[file])
+
+    for file in values(files)
+        close(file)
     end
+
     # not yet implemented
     # writeToPostgres()
 end
 
 """
-processMRMS()
+    processMRMS()
 
-Downloads data from the Iowa State archive of MRMS data. Subsequent to this
-and after a 15 minute delay, the downloaded data is extracted into CSV form.
+Downloads data from the Iowa State archive of MRMS data.
+Calls readMRMS() to extract and process the data.
+Reruns after a 15 minute delay.
 """
 function processMRMS()
     for date in Dates.Date(2021, 1, 1):Day(1):today()
@@ -67,21 +76,21 @@ function processMRMS()
             if !isfile("mrms/$fname")
                 url = "https://mtarchive.geol.iastate.edu/$year/$m2/$d2/mrms/ncep/MultiSensor_QPE_01H_Pass2/$fname"
                 try
-                    HTTP.download(url, "mrms/"; update_period = Inf)
+                    download(url, "mrms/$fname")
                 catch
-                    rm("mrms/$fname") # file gets saved even if 404 error, so it must be removed
                     println("Couldn't download $url")
                     continue
                 end
+
                 println("Downloaded $fname")
                 readMRMS("mrms/$fname")
             end
         end
     end
-    print("Pausing for 15 minutes")
-    sleep(60 * 15)
-    processMRMS()
 end
 
-
-processMRMS()
+while true
+    processMRMS()
+    println("Pausing for 15 minutes")
+    sleep(60 * 15)
+end
