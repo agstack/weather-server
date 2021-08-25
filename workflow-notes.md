@@ -35,20 +35,54 @@ Systems in the data-centric category include DVC and Pachyderm.
 https://airflow.apache.org/
 https://twitter.com/holdenkarau/status/1429206463294021634?s=20
 
+Airflow is a widely used system for managing code-centric workflows. Workflows are created by annotating a Python program that defines a DAG for a particular purpose. This definition specifies a recurrence schedule for invoking the DAG as well as the dependencies of various processing steps. Each processing step can invoke many other kinds of processing other than Python if necessary, but each processing step is typically deployed as an individual container to maximize commonality between the development and production environments.
+
+Airflow and Luigi are very similar in many respects and it is possible to build processing steps that can be executed by either framework. Some important differences from Luigi include 
+1. the ability of Airflow to update workflow invocations rather than depending on an outside system to trigger work the way that Luigi does and 
+1. Airflow is much more widely used and supported than Luigi
+1. Luigi is more command line oriented and Airflow has more emphasis on a web interface
+
+In common with Luigi, Airflow has no concept of data version control. Presumably a system like DVC could be used to record the actions taken by Airflow to form a data lineage.
+
+See https://databand.ai/blog/everyday-data-engineering-tips-on-developing-production-pipelines-in-airflow/ for commentary on how to develop for Airflow.
 ## Luigi
 https://luigi.readthedocs.io/en/stable/
 https://twitter.com/lalleal/status/1429196078193250312?s=20
+
+Luigi is a very low-level system for managing code-centric workflows. Incremental data flows are customarily handled by programmatically augmenting the processing DAG for new input files. There is no concept of data version control in Luigi and many steps in processing maintenance involve manual effort and a knowledge of the internals.
+
+Workflows progress through scheduled invocation of programs that query the state of the workflow and then do the corresponding work. Luigi itself does not actually manage or invoke the workflows at all. This design allows very large workflows to be managed, but it increases the operational complexity.
+
+See https://www.youtube.com/watch?v=fYJspPFo2jU for a taste of the philosophy.
+## DVC
+https://dvc.org/
+
+DVC grew out of common experiences on the part of a number of data scientists as they recognized that they were repeatedly working around the problem of building reproducible data pipelines by putting parameter settings and references to (presumably) immutable data objects into ordinary files which were then checked into git. That practice allows precise replay of machine learning processes and with a small amount of scripting allows leaderboards to be created showing the performance achieved by alternative model building processes.
+
+DVC augments this very basic idea with standard methods for recording the processing steps used to transform data into models and then test those models. The result is a set of commands that encapsulate these practices and allow processing pipelines to be run repeatably and precisely. DVC also includes a web-based dashboard so that you can compare figures of merit of different parameter settings or program versions. As a side effect, even though DVC is unabashedly data-centric you wind up with a DAG of processing steps very similar to those managed by Airflow or Luigi. You have to initiate the processing done by these steps and there is very rudimentary support for parallel execution, but the similarity is definitely still there.
+
+Unfortunately for AgStack usage, DVC is heavily focussed around the model building steps in a data pipeline and making iteration on those final steps efficient. It is not designed for full scale data pipelines that involve substantial data transformation before feature extraction and model building. This focus is very apparent in the way that DVC does not have any good way to incrementally process a directory full of data files as new files appear over time. It may be possible to extend DVC to these use cases, but it isn't clear that it will work well. 
+
+DVC has a mechanism called the [`run-cache`](https://dvc.org/doc/user-guide/project-structure/internal-files#run-cache) which is intended to optimize away redundant processing steps. This is important when you have staging and production workflows that contain many of the same steps, often working on the same input files with the same code. When such redundant steps are detected in a data-centric system, it is reasonable to simply checkout out the results that were previously produced in some other DAG. This can even be extended so that if a work step produces a result file that is identical to a previously produced, that fact can be recorded and many work steps avoided.
+
+In practice, this kind of optimization can avoid 90% or more of the work required in production workflows, particularly when there are many workflows that share processing steps or where multiple shadow and staging versions of the production workflow are in operation at the same time.
+
+DVC is also heavily oriented around versioning of files rather than S3-compatible objects. This is done through heavy use of symbolic and hard links to cached versions of files. Versioning of objects is not well supported, but the rough effect can be had if input URLs are injected into processing steps by the processing framework.
+## Pachyderm
+Pachyderm is a data-oriented system similar in many ways to DVC that starts with the notion of version controlling data assets and recording the processing steps that transform inputs into outputs. Aspects that distinguish Pachyderm from DVC include:
+1. Pachyderm is focussed on the problem of data pipelines more than the terminal problem of comparing model building variations
+1. Pachyderm is heavily focussed on the elimination of redundant processing steps by detecting identical inputs and identical processing steps.
+1. Pachyderm is heavily oriented around Kubernetes as a mechanism for managing computation. Parallel execution of processing steps and strong container orientation are natural logical consequences of this. DVC, on the other hand, has only rudimentary ways to invoke processing steps.
+1. Pachyderm aggresively caches data by splitting files and objects into roughly 5-10MB chunks and storing these in an object store. Access to version controlled objects is done via a proxy that reassembles these chunks into the desired content.
+
+https://www.pachyderm.com/
+https://twitter.com/tristanzajonc/status/1429208490094960641?s=20
 ## Dagster
 https://dagster.io/
 https://twitter.com/schrockn/status/1429209827494875139?s=20
 ## Flyte
 https://docs.flyte.org/en/latest/
 https://twitter.com/soebrunk/status/1429539368558006273?s=20
-## DVC
-https://dvc.org/
-## Pachyderm
-https://www.pachyderm.com/
-https://twitter.com/tristanzajonc/status/1429208490094960641?s=20
 ## Metaflow
 https://metaflow.org/
 ## Gitlab's CI
