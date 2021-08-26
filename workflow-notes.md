@@ -54,5 +54,3 @@ https://metaflow.org/
 ## Gitlab's CI
 ## Project Nessie
 https://twitter.com/patrickangeles/status/1429254409796657153?s=20
-## Azkaban
-https://azkaban.github.io/
