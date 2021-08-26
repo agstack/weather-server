@@ -1,15 +1,21 @@
-using Pkg; Pkg.activate("."); Pkg.instantiate()  # needed since CfGRIB hasn't yet been added to Julia package registry
-
+# See https://github.com/ecmwf/cfgrib.jl for more information about CfGRIB
+# You can install the HEAD version directly from github by hitting ] to enter package mode and then 
+#.   add https://github.com/ecmwf/cfgrib.jl/
+# followed by backspace
 using CfGRIB
 using AxisArrays
 using Printf
 using Dates
+using HTTP
 using GZip
 
 """
-    readMRMS(fname)
+readMRMS(fname)
 
-Extracts MRMS data in GRIB-2 format from fname.
+Extracts MRMS data in grib format from a specified file and then extracts specific
+data elements into CSV formatted files in a directory call csv (one file per location 
+with non-zero precipitation)
+
 Saves data with detectable precipiation to folder ./csv,
 based on truncated lat-lons.
 Example: ./csv/48_70.csv
@@ -59,7 +65,7 @@ function readMRMS(fname)
 end
 
 """
-    processMRMS()
+processMRMS()
 
 Downloads data from the Iowa State archive of MRMS data.
 Calls readMRMS() to extract and process the data.
@@ -78,6 +84,7 @@ function processMRMS()
                 try
                     download(url, "mrms/$fname")
                 catch
+                    rm("mrms/$fname") # file gets saved even if 404 error, so it must be removed
                     println("Couldn't download $url")
                     continue
                 end
