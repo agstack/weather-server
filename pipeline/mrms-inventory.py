@@ -1,17 +1,20 @@
 from urllib.request import urlopen
 import re
-import datetime
+from datetime import timedelta
+from datetime import date
+import pandas
 
-def inventory(start=datetime.timedelta(days=200), end = datetime.date.today(), 
+def inventory(start=timedelta(days=200), end = date.today(), 
               url="https://mtarchive.geol.iastate.edu/{year:4d}/{month:02d}/{day:02d}/mrms/ncep/MultiSensor_QPE_01H_Pass2", 
               file_prefix="Multi", 
               anchor_pattern='<a href={quote_char}({file_prefix}.*?){quote_char}.*?</a>.*?{date_pattern}.*?{size_pattern}',
               quote_char='"',
               mtime_pattern=r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2})",
               size_pattern=r"(\d+[KM])"):
-    """Reads file inventories from a website for dates ranging from `start`
-    to `end` (inclusive). The result is a generator of triples container
-    a URL for a file, the last-modified time and the size of the file.
+    """Reads file inventories from a website for dates ranging from
+    `start` to `end` (inclusive). The result is a dataframe containing
+    the URL for a file, the last-modified time and the size of the
+    file.
 
     Start and end can be expressed as a timestamp, an integer
     representing a date that many days from now, a datetime.timedelta or
@@ -44,7 +47,7 @@ def inventory(start=datetime.timedelta(days=200), end = datetime.date.today(),
 
     """
 
-    dt = datetime.timedelta(days=1)
+    dt = timedelta(days=1)
 
     start = force_date(start)
     end = force_date(end)
@@ -53,19 +56,25 @@ def inventory(start=datetime.timedelta(days=200), end = datetime.date.today(),
                                                quote_char=quote_char,
                                                date_pattern=mtime_pattern,
                                                size_pattern=size_pattern))
-    print(pattern)
+
+    results = pandas.DataFrame({},[],["url","mtime","size"])
 
     t = start
     while (t <= end):
         actual_url = url.format(year=t.year, month=t.month, day=t.day)
         with urlopen(actual_url) as input:
-            soup = str(input.read())
+            soup = input.read().decode('utf-8')
 
         for m in re.finditer(pattern, soup):
             file = actual_url + "/" + m.group(1)
-            yield [file] + [m.group(i) for i in range(2,len(m.groups())+1)]
+            extras = [m.group(i) for i in range(2,len(m.groups())+1)]
+            while len(extras) < 2:
+                extras.append(None)
+            results = results.append(dict(url=file, mtime=extras[0], size=extras[1]), ignore_index=True)
 
         t = t + dt
+
+    return results
     
 def force_date(t):
     """
@@ -78,14 +87,14 @@ def force_date(t):
     - a datetime.date is returned verbatim
     """
 
-    if isinstance(t, datetime.date):
+    if isinstance(t, date):
         return t
-    elif isinstance(t, datetime.timedelta):
-        return datetime.date.today() + t
+    elif isinstance(t, timedelta):
+        return date.today() + t
     elif isinstance(t, int): 
-        return datetime.date.today() + datetime.timedelta(days=t)
+        return date.today() + timedelta(days=t)
     elif isinstance(t, float):
-        return datetime.date.fromtimestamp(t)
+        return date.fromtimestamp(t)
     else:
         raise ValueError(f"Expected date, timedelta, small integer or timestamp, got {type(t)}")
 

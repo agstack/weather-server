@@ -1,0 +1,4 @@
+name = "HexGeometry"
+uuid = "753b3a45-addd-4c12-8b56-e852634e7261"
+authors = ["Ted Dunning <ted.dunning@gmail.com>"]
+version = "0.1.0"
