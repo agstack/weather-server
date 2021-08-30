@@ -4,7 +4,7 @@ from datetime import timedelta
 from datetime import date
 import pandas
 
-def inventory(start=timedelta(days=200), end = date.today(), 
+def inventory(start=-200, end = date.today(), 
               url="https://mtarchive.geol.iastate.edu/{year:4d}/{month:02d}/{day:02d}/mrms/ncep/MultiSensor_QPE_01H_Pass2", 
               file_prefix="Multi", 
               anchor_pattern='<a href={quote_char}({file_prefix}.*?){quote_char}.*?</a>.*?{date_pattern}.*?{size_pattern}',
@@ -49,9 +49,12 @@ def inventory(start=timedelta(days=200), end = date.today(),
 
     dt = timedelta(days=1)
 
-    start = force_date(start)
-    end = force_date(end)
+    end = force_date(end, date.today())
+    start = force_date(start, end)
 
+    if (not mtime_pattern or mtime_pattern == "") and (size_pattern != ""):
+        raise ValueError("Must disable mtime parsing if you disable size parsing")
+            
     pattern = re.compile(anchor_pattern.format(file_prefix=file_prefix, 
                                                quote_char=quote_char,
                                                date_pattern=mtime_pattern,
@@ -76,7 +79,7 @@ def inventory(start=timedelta(days=200), end = date.today(),
 
     return results
     
-def force_date(t):
+def force_date(t, base=date.today()):
     """
     force_date(t)
 
@@ -90,9 +93,9 @@ def force_date(t):
     if isinstance(t, date):
         return t
     elif isinstance(t, timedelta):
-        return date.today() + t
+        return base + t
     elif isinstance(t, int): 
-        return date.today() + timedelta(days=t)
+        return base + timedelta(days=t)
     elif isinstance(t, float):
         return date.fromtimestamp(t)
     else:
