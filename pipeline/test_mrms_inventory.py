@@ -1,4 +1,4 @@
-from mrms_inventory import *
+import mrms_inventory
 import datetime
 import re
 import os.path
@@ -6,7 +6,7 @@ import pytz
 
 
 def test_one_day():
-    inv = inventory(0, datetime.date(2021, 8, 21))
+    inv = mrms_inventory.inventory(0, datetime.date(2021, 8, 21))
     assert inv.shape[0] == 24
     assert inv.shape[1] == 3
     verify_day(datetime.datetime(2021, 8, 21), inv, True)
@@ -14,7 +14,7 @@ def test_one_day():
 
 def test_start_offset():
     for start in [-3, datetime.timedelta(days=-3), datetime.date(2021, 8, 18)]:
-        inv = inventory(start, datetime.date(2021, 8, 21))
+        inv = mrms_inventory.inventory(start, datetime.date(2021, 8, 21))
         assert inv.shape[0] == 4 * 24
         assert inv.shape[1] == 3
         for i in range(0, 4):
