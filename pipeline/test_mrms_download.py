@@ -13,7 +13,7 @@ def test_download():
     inv = mrms_inventory.inventory(0, datetime.date(2021, 8, 21))
     inventory_file = os.path.join(inv_dir.name, "inv.feather")
     target_dir = target.name
-        
+
     pyarrow.feather.write_feather(inv, inventory_file)
     mrms_download.download(inventory_file, target_dir)
     contents = os.listdir(target_dir)

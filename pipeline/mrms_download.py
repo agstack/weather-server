@@ -1,9 +1,8 @@
-import pyarrow as pa
 import pyarrow.feather as feather
-import numpy as np
 import re
 import os
 from urllib.request import urlopen
+
 
 def download(inventory, dest_dir, max_download=4):
     """Given an inventory file for a particular day, and a destination
@@ -41,7 +40,7 @@ def correct_size(expected, file):
         return False
     if not expected:
         return False
-    
+
     units = re.sub(r"\d+", "", expected)
     size = int(re.sub(r"[KMGT]+\w*$", "", expected))
     tolerance = 1

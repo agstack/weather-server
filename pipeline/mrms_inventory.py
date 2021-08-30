@@ -4,9 +4,10 @@ from datetime import timedelta
 from datetime import date
 import pandas
 
-def inventory(start=-200, end = date.today(), 
-              url="https://mtarchive.geol.iastate.edu/{year:4d}/{month:02d}/{day:02d}/mrms/ncep/MultiSensor_QPE_01H_Pass2", 
-              file_prefix="Multi", 
+
+def inventory(start=-200, end=date.today(),
+              url="https://mtarchive.geol.iastate.edu/{year:4d}/{month:02d}/{day:02d}/mrms/ncep/MultiSensor_QPE_01H_Pass2",
+              file_prefix="Multi",
               anchor_pattern='<a href={quote_char}({file_prefix}.*?){quote_char}.*?</a>.*?{date_pattern}.*?{size_pattern}',
               quote_char='"',
               mtime_pattern=r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2})",
@@ -20,12 +21,12 @@ def inventory(start=-200, end = date.today(),
     representing a date that many days from now, a datetime.timedelta or
     a datetime.date. The default starting time is 200 days ago and the
     default end is today.
-    
+
     For each day in that range, `url` is used to format the year, month
     and day into a url that can be used to read an inventory page. The
     url can contain references to `year`, `month` and `day` by those names
     or in that order, as you like.  The default URL points to the Iowa State
-    archive for MRMS data.  
+    archive for MRMS data.
 
     The downloaded page is assumed to be in HTML form and will be
     scanned for anchors that refer to files that start with
@@ -54,13 +55,13 @@ def inventory(start=-200, end = date.today(),
 
     if (not mtime_pattern or mtime_pattern == "") and (size_pattern != ""):
         raise ValueError("Must disable mtime parsing if you disable size parsing")
-            
-    pattern = re.compile(anchor_pattern.format(file_prefix=file_prefix, 
+
+    pattern = re.compile(anchor_pattern.format(file_prefix=file_prefix,
                                                quote_char=quote_char,
                                                date_pattern=mtime_pattern,
                                                size_pattern=size_pattern))
 
-    results = pandas.DataFrame({},[],["url","mtime","size"])
+    results = pandas.DataFrame({}, [], ["url", "mtime", "size"])
 
     t = start
     while (t <= end):
@@ -70,7 +71,7 @@ def inventory(start=-200, end = date.today(),
 
         for m in re.finditer(pattern, soup):
             file = actual_url + "/" + m.group(1)
-            extras = [m.group(i) for i in range(2,len(m.groups())+1)]
+            extras = [m.group(i) for i in range(2, len(m.groups()) + 1)]
             while len(extras) < 2:
                 extras.append(None)
             results = results.append(dict(url=file, mtime=extras[0], size=extras[1]), ignore_index=True)
@@ -78,7 +79,8 @@ def inventory(start=-200, end = date.today(),
         t = t + dt
 
     return results
-    
+
+
 def force_date(t, base=date.today()):
     """
     force_date(t)
@@ -94,11 +96,11 @@ def force_date(t, base=date.today()):
         return t
     elif isinstance(t, timedelta):
         return base + t
-    elif isinstance(t, int): 
+    elif isinstance(t, int):
         return base + timedelta(days=t)
     elif isinstance(t, float):
         return date.fromtimestamp(t)
     else:
         raise ValueError(f"Expected date, timedelta, small integer or timestamp, got {type(t)}")
 
-    
+
