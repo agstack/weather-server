@@ -22,7 +22,13 @@ def download(inventory, dest_dir, max_download=4):
     for i in range(0, inv_df.shape[0]):
         url = inv_df["url"][i]
         file = os.path.basename(url)
-        output_file = os.path.join(dest_dir, file)
+
+        date = inv_df["date"][i]
+        output_dir = os.path.join(dest_dir, str(date.year), "{:02d}".format(date.month), "{:02d}".format(date.day))
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        output_file = os.path.join(output_dir, file)
+
         expected = inv_df["size"][i]
         size_ok = correct_size(expected, output_file)
         if not os.path.exists(output_file) or not size_ok:

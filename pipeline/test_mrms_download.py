@@ -16,19 +16,19 @@ def test_download():
 
     pyarrow.feather.write_feather(inv, inventory_file)
     mrms_download.download(inventory_file, target_dir)
-    contents = os.listdir(target_dir)
-    assert len(contents) == 4
+    first_pass = os.listdir(os.path.join(target_dir, "2021", "08", "21"))
+    assert len(first_pass) == 4
 
     # mess with two files
-    with open(os.path.join(target_dir, contents[0]), "w") as out:
-        out.write("messed up contents")
-    os.remove(os.path.join(target_dir, contents[1]))
+    with open(os.path.join(target_dir, "2021", "08", "21", first_pass[0]), "w") as out:
+        out.write("messed up first_pass")
+    os.remove(os.path.join(target_dir, "2021", "08", "21", first_pass[1]))
 
     # download 5 more
     mrms_download.download(inventory_file, target_dir, max_download=5)
 
     # verify we restored the files we messed with and got 3 new ones
-    more = os.listdir(target_dir)
+    more = os.listdir(os.path.join(target_dir, "2021", "08", "21"))
     assert len(more) == 7
-    assert len(set(more).intersection(set(contents))) == 4
-    assert len(set(more).difference(set(contents))) == 3
+    assert len(set(more).intersection(set(first_pass))) == 4
+    assert len(set(more).difference(set(first_pass))) == 3

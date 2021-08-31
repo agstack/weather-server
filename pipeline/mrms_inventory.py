@@ -14,8 +14,8 @@ def inventory(start=-200, end=date.today(),
               size_pattern=r"(\d+[KM])"):
     """Reads file inventories from a website for dates ranging from
     `start` to `end` (inclusive). The result is a dataframe containing
-    the URL for a file, the last-modified time and the size of the
-    file.
+    the date for file, the URL for a file, the last-modified time and
+    the size of the file.
 
     Start and end can be expressed as a timestamp, an integer
     representing a date that many days from now, a datetime.timedelta or
@@ -61,7 +61,7 @@ def inventory(start=-200, end=date.today(),
                                                date_pattern=mtime_pattern,
                                                size_pattern=size_pattern))
 
-    results = pandas.DataFrame({}, [], ["url", "mtime", "size"])
+    results = pandas.DataFrame({}, [], ["date", "url", "mtime", "size"])
 
     t = start
     while (t <= end):
@@ -74,7 +74,7 @@ def inventory(start=-200, end=date.today(),
             extras = [m.group(i) for i in range(2, len(m.groups()) + 1)]
             while len(extras) < 2:
                 extras.append(None)
-            results = results.append(dict(url=file, mtime=extras[0], size=extras[1]), ignore_index=True)
+            results = results.append(dict(date=t, url=file, mtime=extras[0], size=extras[1]), ignore_index=True)
 
         t = t + dt
 
@@ -102,5 +102,3 @@ def force_date(t, base=date.today()):
         return date.fromtimestamp(t)
     else:
         raise ValueError(f"Expected date, timedelta, small integer or timestamp, got {type(t)}")
-
-
