@@ -4,16 +4,23 @@ import os
 from urllib.request import urlopen
 
 
-def download(inventory, dest_dir, max_download=4):
-    """Given an inventory file for a particular day, and a destination
-    directory, download all files in the inventory that are not
+def download(inventory, dest_dir = os.path.join(os.getcwd(),'Data'), max_download=4):
+    """Given an inventory file (or dataframe as returned by inventory) 
+    for a particular day, and a destination directory (default to current 
+    directory\Data), download all files in the inventory that are not 
     already in the destination directory with the same size.
 
     While at it, don't download more than `max_download` files in this
     call.
     """
+    
+    try:
+        inv_df = feather.read_feather(inventory)
+    except:
+        feather.write_feather(inventory, 'temp.feather')
+        inv_df = feather.read_feather('temp.feather')
+        os.remove('temp.feather')
 
-    inv_df = feather.read_feather(inventory)
     downloads = 0
 
     if not os.path.exists(dest_dir):
