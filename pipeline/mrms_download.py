@@ -70,14 +70,6 @@ def correct_size(expected, file):
     return ratio >= tolerance
 
 
-def parse_date(s):
-    mx = re.compile(r"\-?\d+")
-    if mx.match(s):
-        return int(s)
-    else:
-        return datetime.strptime(s, "%Y-%m-%d")
-
-
 if __name__ == "__main__":
     # execute only if run as a script
     parser = argparse.ArgumentParser(description='Download MRMS file inventories')
