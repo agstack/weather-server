@@ -1,8 +1,11 @@
+import argparse
 from urllib.request import urlopen
 import re
 from datetime import timedelta
 from datetime import date
+from datetime import datetime
 import pandas
+import pyarrow.feather
 
 
 def inventory(start=-200, end=date.today(),
@@ -18,9 +21,10 @@ def inventory(start=-200, end=date.today(),
     the size of the file.
 
     Start and end can be expressed as a timestamp, an integer
-    representing a date that many days from now, a datetime.timedelta or
-    a datetime.date. The default starting time is 200 days ago and the
-    default end is today.
+    representing a relative day, a datetime.timedelta or a
+    datetime.date. The default starting time is 200 days ago and the
+    default end is today. A relative starting time is relative to the
+    end.  A relative end time is relative to now.
 
     For each day in that range, `url` is used to format the year, month
     and day into a url that can be used to read an inventory page. The
@@ -102,3 +106,26 @@ def force_date(t, base=date.today()):
         return date.fromtimestamp(t)
     else:
         raise ValueError(f"Expected date, timedelta, small integer or timestamp, got {type(t)}")
+
+
+def parse_date(s):
+    mx = re.compile(r"\-?\d+")
+    if mx.match(s):
+        return int(s)
+    else:
+        return datetime.strptime(s, "%Y-%m-%d")
+
+
+if __name__ == "__main__":
+    # execute only if run as a script
+    parser = argparse.ArgumentParser(description='Download MRMS file inventories')
+    parser.add_argument("--start", nargs='?', default="0", help="Starting date in yyyy-mm-dd form or an integer indicating number of days before the ending date")
+    parser.add_argument("--end", nargs='?', default="0", help="Ending date in yyyy-mm-dd form or as number of days offset from today. Default is today")
+    parser.add_argument("out", help="Output file name")
+
+    args = parser.parse_args()
+    inv = inventory(parse_date(args.start), parse_date(args.end))
+    print(inv)
+    print(args.out)
+    with open(args.out, "wb") as output:
+        pyarrow.feather.write_feather(inv, output)

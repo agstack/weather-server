@@ -1,3 +1,4 @@
+import argparse
 import pyarrow.feather as feather
 import re
 import os
@@ -58,10 +59,11 @@ def correct_size(expected, file):
     size = int(re.sub(r"[KMGT]+\w*$", "", expected))
     tolerance = 1
     for c in units:
-        for i in range(4):
-            if c.upper() in "KMGT"[i:]:
-                size = size * 1024
-                tolerance = tolerance / 1.025
+        if c.upper() == "K":
+            size = size * 1024
+            tolerance = tolerance / 1.025
+        if c.upper() in "MGT":
+            tolerance = 0
 
     actual = os.path.getsize(file)
     if actual == 0:
@@ -70,4 +72,17 @@ def correct_size(expected, file):
     ratio = size / actual
     if ratio > 1:
         ratio = 1.0 / ratio
+    if ratio < tolerance:
+        print(f"Size ratio {ratio} vs {tolerance} {size} {actual}")
     return ratio >= tolerance
+
+
+if __name__ == "__main__":
+    # execute only if run as a script
+    parser = argparse.ArgumentParser(description='Download MRMS file inventories')
+    parser.add_argument("--inventory", nargs='?', default="inv", help="Inventory file describing files to download. Default is 'inv'")
+    parser.add_argument("--out", help="Root of output tree. Date in yyyy/mm/dd form will be appended")
+    parser.add_argument("--max", default=4, help="Maximum number of files to download in this step")
+
+    args = parser.parse_args()
+    inv = download(args.inventory, args.out, max_download=int(args.max))
