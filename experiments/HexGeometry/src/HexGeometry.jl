@@ -99,7 +99,7 @@ function geoToH3(p::AbstractPoint, resolution::Int) :: H3Index
 end
 
 """
-    geoToH3(latitude, longitude, resolution)
+# geoToH3(latitude, longitude, resolution)
 
 Converts a point defined in terms of latitude and longitude in degrees into an H3Index.
 
@@ -121,7 +121,7 @@ function geoToH3(latitude::Number, longitude::Number, resolution::Int) :: H3Inde
 end
 
 """
-    geoToH3([latitude, longitude], resolution)
+# geoToH3([latitude, longitude], resolution)
 
 Converts a point defined in terms of latitude and longitude in degrees into an H3Index.
 
@@ -143,22 +143,28 @@ function geoToH3(point::Vector{Float64}, resolution::Int) :: H3Index
 end
 
 """
-    h3ToPolygon(id)
+# h3ToPolygon(id)
 
-Converts a single H3Index into the corresponding GeoPolygon in lat/long
+Converts a single H3Index into the corresponding GeoPolygon
 """
 function h3ToPolygon(id::H3Index)
     px = map(p -> [rad2deg(p.lat), rad2deg(p.lon)], H3.API.h3ToGeoBoundary(id))
     return closedPolygon(px)
 end
 
+"""
+# closedPolygon(coordinates)
+
+Add the first point in a vector of coordinates to the end and then creates
+a polygon fromt the result.
+"""
 function closedPolygon(coordinates::Vector{Vector{Float64}}) :: AbstractPolygon
     push!(coordinates, coordinates[1])
     return LibGEOS.Polygon([coordinates])
 end
 
 """
-    h3ToPolygon(Vector{H3Index})
+# h3ToPolygon(Vector{H3Index})
 
 Converts a vector of hexagons (represented as H3Index values) into a polygon which 
 is the union of all of the hexagons.
@@ -168,7 +174,7 @@ function h3ToPolygon(ids::Vector{H3Index})
 end
 
 """
-    polyfill(p::AbstractPolygon, resolution::Int)
+# polyfill(p::AbstractPolygon, resolution::Int; cover::Float64)
 
 Covers the polygon p (which is expressed in lat/long) with hexagons and returns
 the list of H3Indexes for each. Note that this is only an approximate covering.
