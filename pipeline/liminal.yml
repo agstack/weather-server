@@ -6,7 +6,7 @@ volumes:
     local:
       path: .
 images:
-  - image: mmrs-python
+  - image: agstack-1.labs.hpe.com:5000/mmrs-python
     type: python
     source: .
 pipelines:
@@ -27,7 +27,7 @@ pipelines:
       - task: mmrs_download
         type: python
         description: download mmrs data
-        image: mmrs-python
+        image: agstack-1.labs.hpe.com:5000/mmrs-python:latest
         env_vars:
           env1: "a"
           env2: "b"
