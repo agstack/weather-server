@@ -37,7 +37,7 @@ def test_no_pattern():
 
 def test_invalid():
     try:
-        inv = mrms_inventory.inventory(0, datetime.date(2021, 8, 21), mtime_pattern="")
+        mrms_inventory.inventory(0, datetime.date(2021, 8, 21), mtime_pattern="")
         assert not "Expected exception"
     except ValueError:
         pass
@@ -63,4 +63,3 @@ def verify_day(expected, inv, has_mtime=True):
             actual = tz.localize(datetime.datetime.strptime(d, "%Y-%m-%d %H:%M")).astimezone(pytz.utc)
             delta = actual - pytz.utc.localize(expected)
             assert delta <= datetime.timedelta(hours=25)
-
