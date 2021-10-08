@@ -1,5 +1,8 @@
 import argparse
 from urllib.request import urlopen
+from urllib.error import HTTPError
+from urllib.error import URLError
+
 import re
 from datetime import timedelta
 from datetime import date
@@ -7,10 +10,10 @@ from datetime import datetime
 import pandas
 import pyarrow.feather
 
-
 def inventory(start=-200, end=date.today(),
-              url="https://mtarchive.geol.iastate.edu/{year:4d}/{month:02d}/{day:02d}/mrms/ncep/MultiSensor_QPE_01H_Pass2",
-              file_prefix="Multi",
+              url="https://mtarchive.geol.iastate.edu/{year:4d}/{month:02d}/{day:02d}/mrms/ncep/{dir:s}",
+              file_prefix="",
+              search_path=["MultiSensor_QPE_01H_Pass2", "GaugeCorr_QPE_01H"],
               anchor_pattern='<a href={quote_char}({file_prefix}.*?){quote_char}.*?</a>.*?{date_pattern}.*?{size_pattern}',
               quote_char='"',
               mtime_pattern=r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2})",
@@ -69,9 +72,28 @@ def inventory(start=-200, end=date.today(),
 
     t = start
     while (t <= end):
-        actual_url = url.format(year=t.year, month=t.month, day=t.day)
-        with urlopen(actual_url) as input:
-            soup = input.read().decode('utf-8')
+        soup = None
+        for dir in search_path:
+            actual_url = url.format(year=t.year, month=t.month, day=t.day, dir=dir)
+            try:
+                with urlopen(actual_url) as input:
+                    soup = input.read().decode('utf-8')
+                    break
+            
+            except HTTPError:
+                pass
+
+            except URLError as e:
+                print(f"Unable to download {actual_url}")
+                raise e
+
+
+        if not soup:
+            if t <= date.today():
+                attempted_url = url.format(year=t.year, month=t.month, day=t.day, dir="DIR_IN_PATH")
+                raise ValueError(f"Cannot find appropriate data directory under {attempted_url}")
+            else:
+                break
 
         for m in re.finditer(pattern, soup):
             file = actual_url + "/" + m.group(1)
@@ -109,7 +131,7 @@ def force_date(t, base=date.today()):
 
 
 def parse_date(s):
-    mx = re.compile(r"\-?\d+")
+    mx = re.compile(r"^\-?\d+$")
     if mx.match(s):
         return int(s)
     else:
@@ -119,13 +141,13 @@ def parse_date(s):
 if __name__ == "__main__":
     # execute only if run as a script
     parser = argparse.ArgumentParser(description='Download MRMS file inventories')
-    parser.add_argument("--start", nargs='?', default="0", help="Starting date in yyyy-mm-dd form or an integer indicating number of days before the ending date")
-    parser.add_argument("--end", nargs='?', default="0", help="Ending date in yyyy-mm-dd form or as number of days offset from today. Default is today")
+    parser.add_argument("--start", nargs='?', default="0", 
+                        help="Starting date in yyyy-mm-dd form or the number of days before the ending date")
+    parser.add_argument("--end", nargs='?', default="0",
+                        help="Ending date in yyyy-mm-dd form or as number of days offset today. Default is today")
     parser.add_argument("out", help="Output file name")
 
     args = parser.parse_args()
     inv = inventory(parse_date(args.start), parse_date(args.end))
-    print(inv)
-    print(args.out)
     with open(args.out, "wb") as output:
         pyarrow.feather.write_feather(inv, output)
