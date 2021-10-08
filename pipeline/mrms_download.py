@@ -73,7 +73,8 @@ def correct_size(expected, file):
 if __name__ == "__main__":
     # execute only if run as a script
     parser = argparse.ArgumentParser(description='Download MRMS file inventories')
-    parser.add_argument("--inventory", nargs='?', default="inv", help="Inventory file describing files to download. Default is 'inv'")
+    parser.add_argument("--inventory", nargs='?', default="inv", 
+                        help="Inventory file describing files to download. Default is 'inv'")
     parser.add_argument("--out", help="Root of output tree. Date in yyyy/mm/dd form will be appended")
     parser.add_argument("--max", default=4, help="Maximum number of files to download in this step")
 
