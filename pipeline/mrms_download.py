@@ -35,8 +35,9 @@ def download(inventory, dest_dir, max_download=4):
         if not os.path.exists(output_file) or not size_ok:
             with open(output_file, "wb") as out:
                 with urlopen(url) as input:
-                    print(f"downloading to {output_file}")
+                    print(f"downloading to {output_file} from {url}")
                     out.write(input.read())
+                    print(f"  got {os.stat(output_file).st_size/1024} k bytes")
                     downloads += 1
                     if downloads >= max_download:
                         return
