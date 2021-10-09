@@ -87,6 +87,10 @@ def inventory(start=-200, end=date.today(),
                 print(f"Unable to download {actual_url}")
                 raise e
 
+            except Error as e:
+                print(f"Unable to download {actual_url} due to {e}")
+                raise e
+
 
         if not soup:
             if t <= date.today():
