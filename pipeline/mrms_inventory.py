@@ -1,26 +1,33 @@
+import argparse
 from urllib.request import urlopen
+from urllib.error import HTTPError
+from urllib.error import URLError
+
 import re
 from datetime import timedelta
 from datetime import date
+from datetime import datetime
 import pandas
-
+import pyarrow.feather
 
 def inventory(start=-200, end=date.today(),
-              url="https://mtarchive.geol.iastate.edu/{year:4d}/{month:02d}/{day:02d}/mrms/ncep/MultiSensor_QPE_01H_Pass2",
-              file_prefix="Multi",
+              url="https://mtarchive.geol.iastate.edu/{year:4d}/{month:02d}/{day:02d}/mrms/ncep/{dir:s}",
+              file_prefix="",
+              search_path=["MultiSensor_QPE_01H_Pass2", "GaugeCorr_QPE_01H"],
               anchor_pattern='<a href={quote_char}({file_prefix}.*?){quote_char}.*?</a>.*?{date_pattern}.*?{size_pattern}',
               quote_char='"',
               mtime_pattern=r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2})",
               size_pattern=r"(\d+[KM])"):
     """Reads file inventories from a website for dates ranging from
     `start` to `end` (inclusive). The result is a dataframe containing
-    the URL for a file, the last-modified time and the size of the
-    file.
+    the date for file, the URL for a file, the last-modified time and
+    the size of the file.
 
     Start and end can be expressed as a timestamp, an integer
-    representing a date that many days from now, a datetime.timedelta or
-    a datetime.date. The default starting time is 200 days ago and the
-    default end is today.
+    representing a relative day, a datetime.timedelta or a
+    datetime.date. The default starting time is 200 days ago and the
+    default end is today. A relative starting time is relative to the
+    end.  A relative end time is relative to now.
 
     For each day in that range, `url` is used to format the year, month
     and day into a url that can be used to read an inventory page. The
@@ -61,20 +68,43 @@ def inventory(start=-200, end=date.today(),
                                                date_pattern=mtime_pattern,
                                                size_pattern=size_pattern))
 
-    results = pandas.DataFrame({}, [], ["url", "mtime", "size"])
+    results = pandas.DataFrame({}, [], ["date", "url", "mtime", "size"])
 
     t = start
     while (t <= end):
-        actual_url = url.format(year=t.year, month=t.month, day=t.day)
-        with urlopen(actual_url) as input:
-            soup = input.read().decode('utf-8')
+        soup = None
+        for dir in search_path:
+            actual_url = url.format(year=t.year, month=t.month, day=t.day, dir=dir)
+            try:
+                with urlopen(actual_url) as input:
+                    soup = input.read().decode('utf-8')
+                    break
+            
+            except HTTPError:
+                pass
+
+            except URLError as e:
+                print(f"Unable to download {actual_url}")
+                raise e
+
+            except Error as e:
+                print(f"Unable to download {actual_url} due to {e}")
+                raise e
+
+
+        if not soup:
+            if t <= date.today():
+                attempted_url = url.format(year=t.year, month=t.month, day=t.day, dir="DIR_IN_PATH")
+                raise ValueError(f"Cannot find appropriate data directory under {attempted_url}")
+            else:
+                break
 
         for m in re.finditer(pattern, soup):
             file = actual_url + "/" + m.group(1)
             extras = [m.group(i) for i in range(2, len(m.groups()) + 1)]
             while len(extras) < 2:
                 extras.append(None)
-            results = results.append(dict(url=file, mtime=extras[0], size=extras[1]), ignore_index=True)
+            results = results.append(dict(date=t, url=file, mtime=extras[0], size=extras[1]), ignore_index=True)
 
         t = t + dt
 
@@ -104,3 +134,24 @@ def force_date(t, base=date.today()):
         raise ValueError(f"Expected date, timedelta, small integer or timestamp, got {type(t)}")
 
 
+def parse_date(s):
+    mx = re.compile(r"^\-?\d+$")
+    if mx.match(s):
+        return int(s)
+    else:
+        return datetime.strptime(s, "%Y-%m-%d")
+
+
+if __name__ == "__main__":
+    # execute only if run as a script
+    parser = argparse.ArgumentParser(description='Download MRMS file inventories')
+    parser.add_argument("--start", nargs='?', default="0", 
+                        help="Starting date in yyyy-mm-dd form or the number of days before the ending date")
+    parser.add_argument("--end", nargs='?', default="0",
+                        help="Ending date in yyyy-mm-dd form or as number of days offset today. Default is today")
+    parser.add_argument("out", help="Output file name")
+
+    args = parser.parse_args()
+    inv = inventory(parse_date(args.start), parse_date(args.end))
+    with open(args.out, "wb") as output:
+        pyarrow.feather.write_feather(inv, output)
