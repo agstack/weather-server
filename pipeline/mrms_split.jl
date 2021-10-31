@@ -1,4 +1,4 @@
-using GRIB, DataFrames, Query, DataStructures, H3, H3Geometry, GZip, Dates
+using GRIB, DataFrames, Query, DataStructures, H3, H3.API, H3Geometry, GZip, Dates
 using Arrow, Parquet, TimeZones, Printf, Distributed, Dagger
 
 """ 
@@ -63,8 +63,8 @@ function readData(inputFile::String, tileLevel::Int)
         tile = zeros(Int64, length(lons))
         pt = zeros(Int64, length(lons))
         Threads.@threads for i in 1:length(lons)
-            tile[i] = Int64(H3.API.geoToH3(lats[i], lons[i], tileLevel))
-            pt[i] = Int64(H3.API.geoToH3(lats[i], lons[i], 15))
+            tile[i] = Int64(geoToH3(lats[i], lons[i], tileLevel))
+            pt[i] = Int64(geoToH3(lats[i], lons[i], 15))
         end
     end
     @info "geo time" t=t
