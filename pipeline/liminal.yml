@@ -1,8 +1,8 @@
 ---
-name: AgstackPipeline
+name: AgstackPipelines
 volumes:
-  - volume: gettingstartedvol
-    claim_name: gettingstartedvol-pvc
+  - volume: mmrs-data
+    claim_name: mmrs-data-pvc
     local:
       path: .
 images:
@@ -12,16 +12,16 @@ images:
 pipelines:
   - pipeline: agstack_mmrs_pipeline
     owner: Agstack
-    start_date: 2020-10-22
-    timeout_minutes: 1
-    schedule: "*/1 * * * *"
+    start_date: 2021-10-22
+    timeout_minutes: 5
+    schedule: "*/10 * * * *"
     tasks:
       - task: mmrs_download
         type: python
-        description: test download mmrs data
+        description: download mmrs data
         image: agstack-1.labs.hpe.com:5000/mmrs-python:latest
         mounts:
           - mount: mymount
             volume: gettingstartedvol
-            path: /mnt/gettingstartedvol
-        cmd: pytest test_mrms_download.py
+            path: /mnt/data
+        cmd: pytest mrms_inventory.py --start -3 --end 1 /mnt/data
