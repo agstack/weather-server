@@ -3,8 +3,6 @@ name: AgstackPipelines
 volumes:
   - volume: mmrs-data
     claim_name: mmrs-data-pvc
-    local:
-      path: .
 images:
   - image: agstack-1.labs.hpe.com:5000/mmrs-python
     type: python
@@ -16,12 +14,21 @@ pipelines:
     timeout_minutes: 5
     schedule: "*/10 * * * *"
     tasks:
-      - task: mmrs_download
+      - task: mmrs_inventory_download
         type: python
-        description: download mmrs data
+        description: download mmrs inventory
         image: agstack-1.labs.hpe.com:5000/mmrs-python:latest
         mounts:
-          - mount: mymount
-            volume: gettingstartedvol
-            path: /mnt/data
-        cmd: pytest mrms_inventory.py --start -3 --end 1 /mnt/data
+          - mount: mmrs-data-mount
+            volume: mmrs-data
+            path: /mnt/
+        cmd: "python3 -u mrms_inventory.py --start -3 --end 1 /mnt/inv"
+      - task: mmrs_data_download
+        type: python
+        description: download mmrs data from inventory
+        image: agstack-1.labs.hpe.com:5000/mmrs-python:latest
+        mounts:
+          - mount: mmrs-data-mount
+            volume: mmrs-data
+            path: /mnt/
+        cmd: "python3 -u mrms_download.py --inventory /mnt/inv --out /mnt/data"
