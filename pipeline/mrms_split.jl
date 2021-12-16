@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 using GRIB, DataFrames, Query, DataStructures, H3, H3.API, H3Geometry, GZip, Dates
+=======
+using GRIB, DataFrames, Query, DataStructures, H3, H3Geometry, GZip, Dates
+>>>>>>> 72431d63df83d565193ab50f038225c67479edae
 using Arrow, Parquet, TimeZones, Printf, Distributed, Dagger
 
 """ 
@@ -63,8 +67,13 @@ function readData(inputFile::String, tileLevel::Int)
         tile = zeros(Int64, length(lons))
         pt = zeros(Int64, length(lons))
         Threads.@threads for i in 1:length(lons)
+<<<<<<< HEAD
             tile[i] = Int64(geoToH3(lats[i], lons[i], tileLevel))
             pt[i] = Int64(geoToH3(lats[i], lons[i], 15))
+=======
+            tile[i] = Int64(H3.API.geoToH3(lats[i], lons[i], tileLevel))
+            pt[i] = Int64(H3.API.geoToH3(lats[i], lons[i], 15))
+>>>>>>> 72431d63df83d565193ab50f038225c67479edae
         end
     end
     @info "geo time" t=t
@@ -194,6 +203,7 @@ function processDays(source, dest, first, last, tileLevel)
         dailyDir = joinpath(source, day)
         @info "Day" dailyDir
         hour = 0
+<<<<<<< HEAD
         if isdir(dailyDir)
             for f in sort(readdir(dailyDir, join=true))
                 data = joinpath(dest, "hourly/data", day, @sprintf("%02d", hour))
@@ -202,6 +212,14 @@ function processDays(source, dest, first, last, tileLevel)
                 end
                 hour += 1
             end
+=======
+        for f in sort(readdir(dailyDir, join=true))
+            data = joinpath(dest, "hourly/data", day, @sprintf("%02d", hour))
+            if !isdir(data)
+                push!(files, (f,day,hour))
+            end
+            hour += 1
+>>>>>>> 72431d63df83d565193ab50f038225c67479edae
         end
         date += Dates.Day(1)
     end
