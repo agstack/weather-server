@@ -194,12 +194,14 @@ function processDays(source, dest, first, last, tileLevel)
         dailyDir = joinpath(source, day)
         @info "Day" dailyDir
         hour = 0
-        for f in sort(readdir(dailyDir, join=true))
-            data = joinpath(dest, "hourly/data", day, @sprintf("%02d", hour))
-            if !isdir(data)
-                push!(files, (f,day,hour))
+        if isdir(dailyDir)
+            for f in sort(readdir(dailyDir, join=true))
+                data = joinpath(dest, "hourly/data", day, @sprintf("%02d", hour))
+                if !isdir(data)
+                    push!(files, (f,day,hour))
+                end
+                hour += 1
             end
-            hour += 1
         end
         date += Dates.Day(1)
     end
